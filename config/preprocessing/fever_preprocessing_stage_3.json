@@ -1,0 +1,15 @@
+{
+    "data_dir": "../../../fever/claim_db/claim_database/pickle_files",
+    "embeddings_file": "../../data/embeddings/glove.840B.300d.txt",
+    "target_dir": "../../data/preprocessed/FEVER_stage_3",
+
+    "lowercase": false,
+    "ignore_punctuation": false,
+    "num_words": null,
+    "stopwords": [],
+    "labeldict": {"NOT ENOUGH INFO": 0,
+                  "REFUTES": 1,
+                  "SUPPORTS": 2},
+    "bos": "_BOS_", 
+    "eos": "_EOS_"
+}

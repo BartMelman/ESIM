@@ -24,6 +24,8 @@ class ESIM(nn.Module):
                  padding_idx=0,
                  dropout=0.5,
                  num_classes=3,
+                 use_pos_tag_flag = 0,
+                 use_oov_flag = 0,
                  device="cpu"):
         """
         Args:
@@ -44,11 +46,25 @@ class ESIM(nn.Module):
                 executed. Defaults to 'cpu'.
         """
         super(ESIM, self).__init__()
-
+        
+        self.nr_pos_tags = 19
+        self.nr_oov = 75
+        
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
+        self.encoding_dim = self.embedding_dim 
+        
+        if use_pos_tag_flag:
+            self.encoding_dim += self.nr_pos_tags
+#             self.hidden_size += self.nr_pos_tags
+        if use_oov_flag:
+            self.encoding_dim += self.nr_oov
+#             self.hidden_size += self.nr_oov
+            
         self.hidden_size = hidden_size
         self.num_classes = num_classes
+        self.use_pos_tag_flag = use_pos_tag_flag
+        self.use_oov_flag = use_oov_flag
         self.dropout = dropout
         self.device = device
 
@@ -60,11 +76,15 @@ class ESIM(nn.Module):
         if self.dropout:
             self._rnn_dropout = RNNDropout(p=self.dropout)
             # self._rnn_dropout = nn.Dropout(p=self.dropout)
-
+            
         self._encoding = Seq2SeqEncoder(nn.LSTM,
-                                        self.embedding_dim,
+                                        self.encoding_dim,
                                         self.hidden_size,
                                         bidirectional=True)
+#         self._encoding = Seq2SeqEncoder(nn.LSTM,
+#                                         self.embedding_dim,
+#                                         self.hidden_size,
+#                                         bidirectional=True)
 
         self._attention = SoftmaxAttention()
 
@@ -92,7 +112,15 @@ class ESIM(nn.Module):
                 premises,
                 premises_lengths,
                 hypotheses,
-                hypotheses_lengths):
+                hypotheses_lengths, 
+                premises_part_of_speech, 
+                premises_part_of_speech_lengths,
+                premises_out_of_vocabulary,
+                premises_out_of_vocabulary_lengths,
+                hypotheses_part_of_speech,
+                hypotheses_part_of_speech_lengths,
+                hypotheses_out_of_vocabulary,
+                hypotheses_out_of_vocabulary_lengths):
         """
         Args:
             premises: A batch of varaible length sequences of word indices
@@ -112,13 +140,51 @@ class ESIM(nn.Module):
             probabilities: A tensor of size (batch, num_classes) containing
                 the probabilities of each output class in the model.
         """
+        
+        
         premises_mask = get_mask(premises, premises_lengths).to(self.device)
         hypotheses_mask = get_mask(hypotheses, hypotheses_lengths)\
             .to(self.device)
-
+        
+        
+            
         embedded_premises = self._word_embedding(premises)
         embedded_hypotheses = self._word_embedding(hypotheses)
+        
+#         print(self.use_oov_flag)
+        if self.use_oov_flag:
+            one_hot_premises_out_of_vocabulary = torch.nn.functional.one_hot(premises_out_of_vocabulary, self.nr_oov).float()
+            embedded_premises = torch.cat((embedded_premises, one_hot_premises_out_of_vocabulary), 2)
+            
+            one_hot_hypotheses_out_of_vocabulary = torch.nn.functional.one_hot(hypotheses_out_of_vocabulary, self.nr_oov).float()
+            embedded_hypotheses = torch.cat((embedded_hypotheses, one_hot_hypotheses_out_of_vocabulary), 2)
 
+#         print(self.use_pos_tag_flag)
+        if self.use_pos_tag_flag:
+            one_hot_premises_part_of_speech = (torch.nn.functional.one_hot(premises_part_of_speech, self.nr_pos_tags)).float()
+            embedded_premises = torch.cat((embedded_premises, one_hot_premises_part_of_speech), 2)
+            
+            one_hot_hypotheses_part_of_speech = (torch.nn.functional.one_hot(hypotheses_part_of_speech, self.nr_pos_tags)).float()
+            embedded_hypotheses = torch.cat((embedded_hypotheses, one_hot_hypotheses_part_of_speech), 2)
+            
+#         print('one_hot_premises_out_of_vocabulary', one_hot_premises_out_of_vocabulary.size())
+        
+#         print('premises:', premises.size())
+#         print('hypotheses:', hypotheses.size())
+        
+#         print('premises mask size', premises_mask.size())
+        
+#         print('hypotheses mask size', hypotheses_mask.size())
+        
+#         print('embedded premises size', embedded_premises.size())
+        
+#         print('embedded hypotheses size', embedded_hypotheses.size())
+        
+#         raise ValueError('ThE eNd')
+        # === add part OOV and tags === #
+        # if self.use_oov_flag
+        # if self.use_pos_tag_flag
+        
         if self.dropout:
             embedded_premises = self._rnn_dropout(embedded_premises)
             embedded_hypotheses = self._rnn_dropout(embedded_hypotheses)

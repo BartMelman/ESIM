@@ -52,14 +52,36 @@ def train(model,
         premises_lengths = batch["premise_length"].to(device)
         hypotheses = batch["hypothesis"].to(device)
         hypotheses_lengths = batch["hypothesis_length"].to(device)
-        labels = batch["label"].to(device)
+        
+        premises_part_of_speech = batch["premise_part_of_speech"].to(device)
+        premises_part_of_speech_lengths = batch["premise_part_of_speech_length"].to(device)
 
+        premises_out_of_vocabulary = batch["premise_out_of_vocabulary"].to(device)
+        premises_out_of_vocabulary_lengths = batch["premise_out_of_vocabulary_length"].to(device)
+
+        hypotheses_part_of_speech = batch["hypothesis_part_of_speech"].to(device)
+        hypotheses_part_of_speech_lengths = batch["hypothesis_part_of_speech_length"].to(device)
+
+        hypotheses_out_of_vocabulary = batch["hypothesis_out_of_vocabulary"].to(device)
+        hypotheses_out_of_vocabulary_lengths = batch["hypothesis_out_of_vocabulary_length"].to(device)
+        
+        labels = batch["label"].to(device)
+        
         optimizer.zero_grad()
 
         logits, probs = model(premises,
-                              premises_lengths,
-                              hypotheses,
-                              hypotheses_lengths)
+                            premises_lengths,
+                            hypotheses,
+                            hypotheses_lengths, 
+                            premises_part_of_speech, 
+                            premises_part_of_speech_lengths,
+                            premises_out_of_vocabulary,
+                            premises_out_of_vocabulary_lengths,
+                            hypotheses_part_of_speech,
+                            hypotheses_part_of_speech_lengths,
+                            hypotheses_out_of_vocabulary,
+                            hypotheses_out_of_vocabulary_lengths)
+        
         loss = criterion(logits, labels)
         loss.backward()
 
@@ -116,12 +138,34 @@ def validate(model, dataloader, criterion):
             premises_lengths = batch["premise_length"].to(device)
             hypotheses = batch["hypothesis"].to(device)
             hypotheses_lengths = batch["hypothesis_length"].to(device)
+            
+            premises_part_of_speech = batch["premise_part_of_speech"].to(device)
+            premises_part_of_speech_lengths = batch["premise_part_of_speech_length"].to(device)
+            
+            premises_out_of_vocabulary = batch["premise_out_of_vocabulary"].to(device)
+            premises_out_of_vocabulary_lengths = batch["premise_out_of_vocabulary_length"].to(device)
+            
+            hypotheses_part_of_speech = batch["hypothesis_part_of_speech"].to(device)
+            hypotheses_part_of_speech_lengths = batch["hypothesis_part_of_speech_length"].to(device)
+            
+            hypotheses_out_of_vocabulary = batch["hypothesis_out_of_vocabulary"].to(device)
+            hypotheses_out_of_vocabulary_lengths = batch["hypothesis_out_of_vocabulary_length"].to(device)
+            
             labels = batch["label"].to(device)
 
             logits, probs = model(premises,
                                   premises_lengths,
                                   hypotheses,
-                                  hypotheses_lengths)
+                                  hypotheses_lengths,
+                                  premises_part_of_speech, 
+                                  premises_part_of_speech_lengths, 
+                                  premises_out_of_vocabulary, 
+                                  premises_out_of_vocabulary_lengths,
+                                  hypotheses_part_of_speech,
+                                  hypotheses_part_of_speech_lengths,
+                                  hypotheses_out_of_vocabulary,
+                                  hypotheses_out_of_vocabulary_lengths)
+            
             loss = criterion(logits, labels)
 
             running_loss += loss.item()

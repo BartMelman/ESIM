@@ -1,0 +1,19 @@
+{
+    "train_data": "../../data/preprocessed/FEVER_stage_3/train_data.pkl",
+    "valid_data": "../../data/preprocessed/FEVER_stage_3/dev_data.pkl",
+    "embeddings": "../../data/preprocessed/FEVER_stage_3/embeddings.pkl",
+
+    "target_dir": "../../data/checkpoints/FEVER_stage_3",
+    
+    "hidden_size": 300,
+    "dropout": 0.5,
+    "num_classes": 3,
+    "use_pos_tag_flag": 0,
+    "use_oov_flag": 0,
+
+    "epochs": 64,
+    "batch_size": 32,
+    "lr": 0.0004,
+    "patience": 5,
+    "max_gradient_norm": 10.0
+}
