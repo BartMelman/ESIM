@@ -54,9 +54,9 @@ def preprocess_FEVER_data(inputdir,
         os.makedirs(targetdir)
 
     # Retrieve the train, dev and test data files from the dataset directory.
-    train_file = 'stage_2_train_one_from_every_claim_data.pkl'
-    dev_file = 'stage_2_validation_one_from_every_claim_data.pkl'
-    test_file = 'stage_2_dev_one_from_every_claim_data.pkl'
+    train_file = 'stage_2_train_max_correct_data.pkl'
+    dev_file = 'stage_2_validation_max_correct_data.pkl'
+    test_file = 'stage_2_dev_max_correct_data.pkl'
 #     train_file = ""
 #     dev_file = ""
 #     test_file = ""

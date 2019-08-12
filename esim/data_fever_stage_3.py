@@ -7,6 +7,8 @@ import string
 import torch
 import numpy as np
 import pickle
+import os
+import json
 
 from collections import Counter
 from torch.utils.data import Dataset
@@ -155,7 +157,12 @@ class Preprocessor(object):
         words = []
         [words.extend(sentence) for sentence in data["premises"]]
         [words.extend(sentence) for sentence in data["hypotheses"]]
-
+        
+        path_text_claim_dev = '/mnt/01_thesis/01_code/ESIM/word_list_wiki_claim.json'
+        dict_vocab = dict_load_json(path_text_claim_dev)
+        vocab = dict_vocab['vocab']
+        [words.extend(word) for word in vocab]
+        print('length_vocab', len(vocab), 'length_words', len(words))
         counts = Counter(words)
         num_words = self.num_words
         if self.num_words is None:
@@ -198,6 +205,7 @@ class Preprocessor(object):
         indices = []
         # Include the beggining of sentence token at the start of the sentence
         # if one is defined.
+        oov_word_list = []
         if self.bos:
             indices.append(self.worddict["_BOS_"])
 
@@ -207,13 +215,23 @@ class Preprocessor(object):
             else:
                 # Words absent from 'worddict' are treated as a special
                 # out-of-vocabulary word (OOV).
+                oov_word_list.append(word)
                 index = self.worddict["_OOV_"]
             indices.append(index)
         # Add the end of sentence token at the end of the sentence if one
         # is defined.
         if self.eos:
             indices.append(self.worddict["_EOS_"])
-
+        
+        path_file = 'oov_word_list_stage_3.json'
+        if os.path.isfile(path_file):
+            dict_oov = dict_load_json(path_file)
+        else:
+            dict_oov = {}
+            dict_oov['oov'] = []
+        dict_oov['oov'] += oov_word_list
+        dict_save_json(dict_oov, path_file)
+        
         return indices
 
     def indices_to_words(self, indices):
@@ -262,7 +280,7 @@ class Preprocessor(object):
             label = data["labels"][i]
             if label not in self.labeldict and label != "hidden":
                 continue
-
+            print(label)
             transformed_data["ids"].append(data["ids"][i])
             transformed_data["premises_part_of_speech"].append([17] + data["premises_part_of_speech"][i] + [17])
             transformed_data["premises_out_of_vocabulary"].append([0] + data["premises_out_of_vocabulary"][i] + [1])
@@ -329,6 +347,7 @@ class Preprocessor(object):
                 if word == "_PAD_":
                     continue
                 missed += 1
+                print('word oov', word)
                 # Out of vocabulary words are initialised with random gaussian
                 # samples.
                 embedding_matrix[i] = np.random.normal(size=(embedding_dim))
@@ -487,4 +506,16 @@ class FEVERDataset(Dataset):
 #         return 'no_evidence'
 #     else:
 #         raise ValueError('input label not in options', input_label)
-        
+def dict_load_json(path_file):
+    if os.path.isfile(path_file):
+        with open(path_file, "r") as f:
+            dictionary = json.load(f)
+    else:
+        raise ValueError('json file does not exist', path_file)
+    return dictionary
+
+def dict_save_json(dictionary, path_file):
+    if os.path.isfile(path_file):
+        print('overwriting file: %s'%(path_file))
+    with open(path_file, "w") as f:
+        json.dump(dictionary, f)
